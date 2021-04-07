@@ -26,6 +26,7 @@ audiolevelinterval=1000
 # calculated as audiolevelinterval/packetization time (20ms for 8kHz)
 # Values from [0-100]
 audiolevelfilter = 20
+withstats = true
 
 [router.simulcast]
 # Prefer best quality initially

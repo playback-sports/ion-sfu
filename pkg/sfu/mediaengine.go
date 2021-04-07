@@ -23,7 +23,8 @@ func getPublisherMediaEngine() (*webrtc.MediaEngine, error) {
 		return nil, err
 	}
 
-	videoRTCPFeedback := []webrtc.RTCPFeedback{{"goog-remb", ""}, {"ccm", "fir"}, {"nack", ""}, {"nack", "pli"}}
+	// videoRTCPFeedback := []webrtc.RTCPFeedback{{"goog-remb", ""}, {"ccm", "fir"}, {"nack", ""}, {"nack", "pli"}}
+	videoRTCPFeedback := []webrtc.RTCPFeedback{{"goog-remb", ""}, {"nack", ""}, {"nack", "pli"}}
 	for _, codec := range []webrtc.RTPCodecParameters{
 		{
 			RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: mimeTypeVP8, ClockRate: 90000, RTCPFeedback: videoRTCPFeedback},
@@ -66,7 +67,7 @@ func getPublisherMediaEngine() (*webrtc.MediaEngine, error) {
 	for _, extension := range []string{
 		sdp.SDESMidURI,
 		sdp.SDESRTPStreamIDURI,
-		sdp.TransportCCURI,
+		// sdp.TransportCCURI,
 		frameMarking,
 	} {
 		if err := me.RegisterHeaderExtension(webrtc.RTPHeaderExtensionCapability{URI: extension}, webrtc.RTPCodecTypeVideo); err != nil {
