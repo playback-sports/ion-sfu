@@ -10,11 +10,12 @@ import (
 
 type Factory struct {
 	sync.RWMutex
-	videoPool   *sync.Pool
-	audioPool   *sync.Pool
-	rtpBuffers  map[uint32]*Buffer
-	rtcpReaders map[uint32]*RTCPReader
-	logger      logr.Logger
+	videoPool         *sync.Pool
+	audioPool         *sync.Pool
+	rtpBuffers        map[uint32]*Buffer
+	rtcpReaders       map[uint32]*RTCPReader
+	logger            logr.Logger
+	currentResolution func() (w, h int64)
 }
 
 func NewBufferFactory(trackingPackets int, logger logr.Logger) *Factory {
@@ -38,10 +39,17 @@ func NewBufferFactory(trackingPackets int, logger logr.Logger) *Factory {
 				return make([]byte, maxPktSize*25)
 			},
 		},
-		rtpBuffers:  make(map[uint32]*Buffer),
-		rtcpReaders: make(map[uint32]*RTCPReader),
-		logger:      logger,
+		rtpBuffers:        make(map[uint32]*Buffer),
+		rtcpReaders:       make(map[uint32]*RTCPReader),
+		logger:            logger,
+		currentResolution: nil,
 	}
+}
+
+func (f *Factory) SetCurrentResolution(currentResolution func() (w, h int64)) {
+	f.Lock()
+	defer f.Unlock()
+	f.currentResolution = currentResolution
 }
 
 func (f *Factory) GetOrNew(packetType packetio.BufferPacketType, ssrc uint32) io.ReadWriteCloser {
@@ -64,7 +72,7 @@ func (f *Factory) GetOrNew(packetType packetio.BufferPacketType, ssrc uint32) io
 		if reader, ok := f.rtpBuffers[ssrc]; ok {
 			return reader
 		}
-		buffer := NewBuffer(ssrc, f.videoPool, f.audioPool, f.logger)
+		buffer := NewBuffer(ssrc, f.videoPool, f.audioPool, f.logger, f.currentResolution)
 		f.rtpBuffers[ssrc] = buffer
 		buffer.OnClose(func() {
 			f.Lock()
