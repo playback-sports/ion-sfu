@@ -98,7 +98,7 @@ func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publ
 	})
 
 	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		Logger.V(1).Info("ice connection status", "state", connectionState)
+		Logger.V(1).Info("ice connection status", "state", connectionState.String(), "peer id", p.id)
 		switch connectionState {
 		case webrtc.ICEConnectionStateFailed:
 			fallthrough

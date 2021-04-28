@@ -52,7 +52,7 @@ func NewSubscriber(id string, cfg WebRTCTransportConfig) (*Subscriber, error) {
 	}
 
 	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		Logger.V(1).Info("ice connection status", "state", connectionState)
+		Logger.V(1).Info("ice connection status", "state", connectionState.String(), "peer id", s.id)
 		switch connectionState {
 		case webrtc.ICEConnectionStateFailed:
 			fallthrough
