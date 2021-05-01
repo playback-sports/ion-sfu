@@ -80,6 +80,9 @@ func (r *router) Stop() {
 }
 
 func (r *router) Stats() map[uint32]*stats.Stream {
+	r.Lock()
+	defer r.Unlock()
+
 	if !r.config.WithStats {
 		return nil
 	}
