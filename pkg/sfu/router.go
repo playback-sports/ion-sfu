@@ -127,6 +127,9 @@ func (r *router) AddReceiver(receiver *webrtc.RTPReceiver, track *webrtc.TrackRe
 	}
 
 	rtcpReader.OnPacket(func(bytes []byte) {
+		r.Lock()
+		defer r.Unlock()
+
 		pkts, err := rtcp.Unmarshal(bytes)
 		if err != nil {
 			Logger.Error(err, "Unmarshal rtcp receiver packets err")
