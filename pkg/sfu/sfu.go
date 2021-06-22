@@ -80,11 +80,12 @@ var (
 // SFU represents an sfu instance
 type SFU struct {
 	sync.RWMutex
-	webrtc       WebRTCTransportConfig
-	turn         *turn.Server
-	sessions     map[string]Session
-	datachannels []*Datachannel
-	withStats    bool
+	webrtc            WebRTCTransportConfig
+	turn              *turn.Server
+	sessions          map[string]Session
+	datachannels      []*Datachannel
+	withStats         bool
+	currentResolution *resolution
 }
 
 // NewWebRTCTransportConfig parses our settings and returns a usable WebRTCTransportConfig for creating PeerConnections
@@ -210,6 +211,8 @@ func NewSFU(c Config) *SFU {
 		withStats: c.Router.WithStats,
 	}
 
+	c.BufferFactory.SetCurrentResolution(sfu.getCurrentResolution)
+
 	if c.Turn.Enabled {
 		ts, err := InitTurnServer(c.Turn, c.TurnAuth)
 		if err != nil {
@@ -274,4 +277,43 @@ func (s *SFU) GetSessions() map[string]Session {
 	s.RLock()
 	defer s.RUnlock()
 	return s.sessions
+}
+
+func (s *SFU) SetCurrentResolution(width, height int64) {
+	s.Lock()
+	defer s.Unlock()
+	s.currentResolution = &resolution{
+		Width:  width,
+		Height: height,
+	}
+}
+
+func (s *SFU) getCurrentResolution() (width, height int64) {
+	s.RLock()
+	defer s.RUnlock()
+	if s.currentResolution == nil {
+		return 0, 0
+	}
+	return s.currentResolution.Width, s.currentResolution.Height
+}
+
+func (s *SFU) GetStats() map[uint32]*stats.Stream {
+	s.Lock()
+	defer s.Unlock()
+
+	if !s.withStats {
+		return nil
+	}
+
+	for _, session := range s.sessions {
+		peers := session.Peers()
+		for _, p := range peers {
+			pub := p.Publisher()
+			if pub != nil {
+				stats := pub.GetRouter().Stats()
+				return stats
+			}
+		}
+	}
+	return nil
 }

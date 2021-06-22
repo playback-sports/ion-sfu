@@ -16,6 +16,7 @@ type Router interface {
 	AddReceiver(receiver *webrtc.RTPReceiver, track *webrtc.TrackRemote) (Receiver, bool)
 	AddDownTracks(s *Subscriber, r Receiver) error
 	Stop()
+	Stats() map[uint32]*stats.Stream
 }
 
 // RouterConfig defines Router configurations
@@ -76,6 +77,14 @@ func (r *router) Stop() {
 	if r.config.WithStats {
 		stats.Peers.Dec()
 	}
+}
+
+func (r *router) Stats() map[uint32]*stats.Stream {
+	if !r.config.WithStats {
+		return nil
+	}
+
+	return r.stats
 }
 
 func (r *router) AddReceiver(receiver *webrtc.RTPReceiver, track *webrtc.TrackRemote) (Receiver, bool) {

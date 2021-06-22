@@ -94,6 +94,8 @@ type Buffer struct {
 
 	// logger
 	logger logr.Logger
+
+	currentResolution func() (w, h int64)
 }
 
 type Stats struct {
@@ -111,12 +113,13 @@ type Options struct {
 }
 
 // NewBuffer constructs a new Buffer
-func NewBuffer(ssrc uint32, vp, ap *sync.Pool, logger logr.Logger) *Buffer {
+func NewBuffer(ssrc uint32, vp, ap *sync.Pool, logger logr.Logger, currentResolution func() (w, h int64)) *Buffer {
 	b := &Buffer{
-		mediaSSRC: ssrc,
-		videoPool: vp,
-		audioPool: ap,
-		logger:    logger,
+		mediaSSRC:         ssrc,
+		videoPool:         vp,
+		audioPool:         ap,
+		logger:            logger,
+		currentResolution: currentResolution,
 	}
 	b.extPackets.SetMinCapacity(7)
 	return b
@@ -155,9 +158,9 @@ func (b *Buffer) Bind(params webrtc.RTPParameters, o Options) {
 			case webrtc.TypeRTCPFBGoogREMB:
 				b.logger.V(1).Info("Setting feedback", "type", "webrtc.TypeRTCPFBGoogREMB")
 				b.remb = true
-			case webrtc.TypeRTCPFBTransportCC:
-				b.logger.V(1).Info("Setting feedback", "type", webrtc.TypeRTCPFBTransportCC)
-				b.twcc = true
+			// case webrtc.TypeRTCPFBTransportCC:
+			// 	b.logger.V(1).Info("Setting feedback", "type", webrtc.TypeRTCPFBTransportCC)
+			// 	b.twcc = true
 			case webrtc.TypeRTCPFBNACK:
 				b.logger.V(1).Info("Setting feedback", "type", webrtc.TypeRTCPFBNACK)
 				b.nacker = newNACKQueue()
@@ -443,8 +446,18 @@ func (b *Buffer) buildREMBPacket() *rtcp.ReceiverEstimatedMaximumBitrate {
 	}
 	b.stats.TotalByte = 0
 
+	var width, height int64 = 0, 0
+	if b.currentResolution != nil {
+		width, height = b.currentResolution()
+	}
+	tb := getTargetBitrateForResolution(width, height)
+	rembBitrate := tb.MidRate
+	if tb.MidHighRate != 0 {
+		rembBitrate = tb.MidHighRate
+	}
+
 	return &rtcp.ReceiverEstimatedMaximumBitrate{
-		Bitrate: br,
+		Bitrate: rembBitrate,
 		SSRCs:   []uint32{b.mediaSSRC},
 	}
 }
