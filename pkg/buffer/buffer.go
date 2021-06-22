@@ -452,7 +452,7 @@ func (b *Buffer) buildREMBPacket() *rtcp.ReceiverEstimatedMaximumBitrate {
 	}
 	tb := getTargetBitrateForResolution(width, height)
 	rembBitrate := tb.MidRate
-	b.logger.Info("build remb %dx%d %d", width, height, rembBitrate)
+	b.logger.Info("build remb", "width", width, "height", height, "rembBitrate", rembBitrate)
 	if tb.MidHighRate != 0 {
 		rembBitrate = tb.MidHighRate
 	}
