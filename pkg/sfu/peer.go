@@ -86,7 +86,7 @@ func (p *PeerLocal) Join(sid, uid string, config ...JoinConfig) error {
 	}
 
 	if p.session != nil {
-		Logger.V(1).Info("peer already exists", "session_id", sid, "peer_id", p.id, "publisher_id", p.publisher.id)
+		Logger.V(1).Info("peer already exists", "session_id", sid, "peer_id", p.id)
 		return ErrTransportExists
 	}
 
@@ -230,10 +230,11 @@ func (p *PeerLocal) SetRemoteDescription(sdp webrtc.SessionDescription) error {
 
 // Trickle candidates available for this peer
 func (p *PeerLocal) Trickle(candidate webrtc.ICECandidateInit, target int) error {
+	Logger.V(0).Info("PeerLocal trickle", "peer_id", p.id, "target", target, "noPublisher", p.publisher == nil, "noSubscriber", p.subscriber == nil)
 	if p.subscriber == nil || p.publisher == nil {
 		return ErrNoTransportEstablished
 	}
-	Logger.V(0).Info("PeerLocal trickle", "peer_id", p.id)
+
 	switch target {
 	case publisher:
 		if err := p.publisher.AddICECandidate(candidate); err != nil {
